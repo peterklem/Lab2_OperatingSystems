@@ -254,7 +254,22 @@ int main(int args, char* kwargs[])
 			}
 			
 		}
-		fprintf(fp2, "\n");
+        // Output string command to file and terminal
+        printf(str);
+        fprintf(fp2, str);
+        // Output all processes and corresponding status to terminal and output file
+        printProcessStatus(processes, numProcesses);
+        writeProcessStatus(processes, numProcesses, fp2);
+        //Output queues to terminal and output file
+        printQueue(disk);
+        printQueue(keyboard);
+        printQueue(printer);
+        writeQueue(disk, fp2);
+        writeQueue(keyboard, fp2);
+        writeQueue(printer, fp2);
+
+        resetChanged(processes, numProcesses); // Reset all changed values for next loop
+		fprintf(fp2, "\n\n");
 	}
     /*for (int i = 0; i < sizeof(LineInFile); i++)
     {
@@ -422,3 +437,11 @@ int findProcessLocation(struct Process* processes[20], char* processName)
     return -1;  
 }
 
+void resetChanged(struct Process* processes[20], int numProcesses)
+// Set all "changed" variables back to 0
+{
+    for(int i = 0; i < numProcesses; i++)
+    {
+        processes[i]->changed = 0;
+    }
+}
