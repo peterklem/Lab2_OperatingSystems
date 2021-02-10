@@ -17,8 +17,8 @@ struct Process{
 // Struct for each of the queues
 struct Queue{
     int front, rear, size; // First and last in the queue, and amount of 
-    char** array;
-    char name[10]; 
+    char** array; // Array of strings
+    char name[10]; // Name of queue itself
 };
 
 // Function prototypes
@@ -44,6 +44,7 @@ int main(int args, char* kwargs[])
     char *header; // Array of strings from first line of each input file
     int numProcesses = 0; // Number of processes initialized
     struct Process *processes[20]; // Holds each process as they are initialized
+    int index = 0;
     
 	FILE* fp1;
 	FILE* fp2;
@@ -183,19 +184,73 @@ int main(int args, char* kwargs[])
 			}
 			else if (strcmp(tokenizedLine[3], "out") == 0)						//Process is swapped out
 			{
-				fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[3]);
+				//fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[3]);
+                index = findProcessLocation(processes, tokenizedLine[0]); // Find process in array
+                if(strcmp(processes[index]->status, "Blocked"))
+                {
+                    strcpy(processes[index]->status, "Blocked/Suspend"); // Send to blocked/sspd state
+                    
+                }
+                else if(strcmp(processes[index]->status, "Ready")
+                    || strcmp(processes[index]->status, "Running"))
+                {
+                    strcpy(processes[index]->status, "Ready/Suspend");
+                    processes[index]->changed = 1; 
+                }
+                else
+                {
+                    printf("Cannot swap out %s, not in the right starting state.\n", tokenizedLine[0]);
+                }
+                
 			}
 			else if (strcmp(tokenizedLine[3], "in") == 0)						//Process is swapped in
 			{
-				fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[3]);
+				//fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[3]);
+                index = findProcessLocation(processes, tokenizedLine[0]); // find process in array
+                if(strcmp(processes[index]->status, "Ready/Suspend"))
+                {
+                    strcpy(processes[index]->status, "Ready");
+                    processes[index]->changed = 1; 
+                }
+                else if (strcmp(processes[index]->status, "Blocked/Suspend"))
+                {
+                    strcpy(processes[index]->status, "Blocked");
+                    processes[index]->changed = 1; 
+                }
+                else{
+                    printf("Cannot swap in %s, not in the right starting state.\n", tokenizedLine[0]);
+                }
 			}
 			else if (strcmp(tokenizedLine[1], "interrupt") == 0)				//An interrupt has occured
 			{
-				fprintf(fp2, "%s %s ", tokenizedLine[4], tokenizedLine[1]);
+				//fprintf(fp2, "%s %s ", tokenizedLine[4], tokenizedLine[1]);
+                index = findProcessLocation(processes, tokenizedLine[4]); // find process in array
+                if(strcmp(processes[index]->status, "Blocked"))
+                {
+                    strcpy(processes[index]->status, "Ready");
+                    processes[index]->changed = 1; 
+                }
+                else if(strcmp(processes[index]->status, "Blocked/Suspend"))
+                {
+                    strcpy(processes[index]->status, "Ready/Suspend");
+                    processes[index]->changed = 1;                     
+                }
+                else{
+                    printf("Cannot interrupt %s, not in the right starting state.\n", tokenizedLine[4]);
+                }
 			}
 			else																//Process has been terminated
 			{
-				fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[2]);
+				//fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[2]);
+                index = findProcessLocation(processes, tokenizedLine[0]); // find process in array
+                if(strcmp(processes[index]->status, "Running"))
+                {
+                    strcpy(processes[index]->status, "Release");
+                    processes[index]->changed = 1; 
+                }
+                else{
+                    printf("Cannot interrupt %s, not in the right starting state.\n", tokenizedLine[0]);
+                }
 			}
 			
 		}
