@@ -307,16 +307,9 @@ int main(int args, char* kwargs[])
 			}
 			else																//Process has been terminated
 			{
-				//fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[2]);
                 index = findProcessLocation(processes, tokenizedLine[0]); // find process in array
-                if(strcmp(processes[index]->status, "Running") == 0)
-                {
-                    strcpy(processes[index]->status, "Release");
-                    processes[index]->changed = 1;
-                }
-                else{
-                    printf("\nCannot interrupt %s, not in the right starting state.\n", tokenizedLine[0]);
-                }
+                strcpy(processes[index]->status, "Release");
+                processes[index]->changed = 1;
 			}
 
 		}
