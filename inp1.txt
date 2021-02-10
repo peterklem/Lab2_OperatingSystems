@@ -10,4 +10,4 @@ At time 36: An interrupt occurred for P3.
 At time 38: P1 is terminated. 
 At time 40: An interrupt occurred for P7. 
 At time 44: P7 is swapped in. 
-At time 48: An interrupt occurred for P8. 
+At time 48: An interrupt occurred for P8.
