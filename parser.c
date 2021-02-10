@@ -29,8 +29,8 @@ void printQueue(struct Queue* queue); // Prints queue to output file
 void writeQueue(struct Queue* queue, FILE* outFile); // Writes to output file
 void printProcessStatus(struct Process* processes[20], int numProcesses); // Prints each process and status to terminal
 void writeProcessStatus(struct Process* processes[20], int numProcesses, FILE* outFile); // Writes each process/state to output file
-void changeStatus();
 int findProcessLocation(struct Process* processes[20], char* processName);
+void resetChanged(struct Process* processes[20], int numProcesses);
 
 int main(int args, char* kwargs[])
 {
