@@ -142,7 +142,7 @@ int main(int args, char* kwargs[])
 
 	//parse each remaining line into Process event
 	//while loop with fgets reads each line
-	while (fgets(str, sizeof(str), fp1) != NULL) // Line 2
+	while (fgets(str, sizeof(str), fp1) != NULL) // All other lines
 	{
         fprintf(fp2, str); // Print entire line to file & console
         printf(str);
@@ -273,31 +273,33 @@ int main(int args, char* kwargs[])
 			else if (strcmp(tokenizedLine[1], "interrupt") == 0)				//An interrupt has occured
 			{
 				//fprintf(fp2, "%s %s ", tokenizedLine[4], tokenizedLine[1]);
-                
                 index = findProcessLocation(processes, tokenizedLine[4]); // find process in array
-                // Check if the object is in a queue
-                if( strcmp(processes[index]->name, disk->array[0] == 0) ||
-                    strcmp(processes[index]->name, keyboard->array[0]) == 0||
-                    strcmp(processes[index]->name, printer->array[0]) == 0)
-                {
-                    if(strcmp(processes[index]->status, "Blocked") == 0)
-                    {
-                        strcpy(processes[index]->status, "Ready");
-                        processes[index]->changed = 1;
-                    }
-                    else if(strcmp(processes[index]->status, "Blocked/Suspend") == 0)
-                    {
-                        strcpy(processes[index]->status, "Ready/Suspend");
-                        processes[index]->changed = 1;
-                    }
-                    else{
-                        printf("Cannot interrupt %s, not in the right starting state.\n", tokenizedLine[4]);
-                    }
-                }
+                // Determine which queue the item is in, remove from queue
+                if( strcmp(processes[index]->name, disk->array[0]) == 0) // Disk array
+                    removeFromQueue(disk, processes[index]);
+                else if(strcmp(processes[index]->name, keyboard->array[0]) == 0)
+                    removeFromQueue(keyboard, processes[index]);
+                else if (strcmp(processes[index]->name, printer->array[0]) == 0)
+                    removeFromQueue(printer, processes[index]);
                 else
-                {
                     printf("Cannot interrupt %s, not at the front of a queue.");
+                
+
+                if(strcmp(processes[index]->status, "Blocked") == 0)
+                {
+                    strcpy(processes[index]->status, "Ready");
+                    processes[index]->changed = 1;
                 }
+                else if(strcmp(processes[index]->status, "Blocked/Suspend") == 0)
+                {
+                    strcpy(processes[index]->status, "Ready/Suspend");
+                    processes[index]->changed = 1;
+                }
+                else{
+                    printf("Cannot interrupt %s, not in the right starting state.\n", tokenizedLine[4]);
+                }
+                
+                
                 
 			}
 			else																//Process has been terminated
@@ -315,9 +317,6 @@ int main(int args, char* kwargs[])
 			}
 
 		}
-        // Output string command to file and terminal
-        printf(str);
-        fprintf(fp2, str);
         // Output all processes and corresponding status to terminal and output file
         printProcessStatus(processes, numProcesses);
         writeProcessStatus(processes, numProcesses, fp2);
@@ -330,7 +329,8 @@ int main(int args, char* kwargs[])
         writeQueue(printer, fp2);
 
         resetChanged(processes, numProcesses); // Reset all changed values for next loop
-		fprintf(fp2, "\n\n");
+		fprintf(fp2, "\n");
+        printf("\n");
 	}
     /*for (int i = 0; i < sizeof(LineInFile); i++)
     {
@@ -430,6 +430,7 @@ void printQueue(struct Queue* queue)
 // Prints the queue out to the terminal
 {
     printf("%s queue: ", queue->name);
+    
     int i = queue->front; //Iter
     while(i != queue->rear + 1)
     {
@@ -445,12 +446,17 @@ void writeQueue(struct Queue* queue, FILE* outFile)
 // Writes the queue to the output file
 {
     fprintf(outFile, "%s queue: ", queue->name);
+    if(isEmpty(queue))
+    {
+        fprintf(outFile, "\n");
+        return;
+    }
     int i = queue->front; //Iter
-    while(i != queue->rear + 1)
+    while(i != queue->rear + 1) // There are more processes in the queue to print
     {
         fprintf(outFile, "%s ", queue->array[i]);
         i++;
-        if (i == QUEUE_CAPACITY) // Loop around queue if max value is reached
+        if (i == QUEUE_CAPACITY) // Loop around queue if max array value is reached
             i = 0;
     }
     fprintf(outFile, "\n");
@@ -468,6 +474,7 @@ void printProcessStatus(struct Process* processes[20], int numProcesses)
             printf("*"); // Changed states recently
         printf(" "); // Add space at end
     }
+    printf("\n");
 }
 
 void writeProcessStatus(struct Process* processes[20], int numProcesses, FILE* outFile)
@@ -482,6 +489,7 @@ void writeProcessStatus(struct Process* processes[20], int numProcesses, FILE* o
             fprintf(outFile, "*"); // Changed states recently
         fprintf(outFile, " "); // Add space at end
     }
+    fprintf(outFile, "\n");
 }
 
 int findProcessLocation(struct Process* processes[20], char* processName)
