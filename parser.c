@@ -235,13 +235,13 @@ int main(int args, char* kwargs[])
 			{
 				//fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[3]);
                 index = findProcessLocation(processes, tokenizedLine[0]); // Find process in array
-                if(strcmp(processes[index]->status, "Blocked"))
+                if(strcmp(processes[index]->status, "Blocked") == 0)
                 {
                     strcpy(processes[index]->status, "Blocked/Suspend"); // Send to blocked/sspd state
 
                 }
-                else if(strcmp(processes[index]->status, "Ready")
-                    || strcmp(processes[index]->status, "Running"))
+                else if(strcmp(processes[index]->status, "Ready") == 0
+                    || strcmp(processes[index]->status, "Running" == 0))
                 {
                     strcpy(processes[index]->status, "Ready/Suspend");
                     processes[index]->changed = 1;
@@ -256,12 +256,12 @@ int main(int args, char* kwargs[])
 			{
 				//fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[3]);
                 index = findProcessLocation(processes, tokenizedLine[0]); // find process in array
-                if(strcmp(processes[index]->status, "Ready/Suspend"))
+                if(strcmp(processes[index]->status, "Ready/Suspend") == 0)
                 {
                     strcpy(processes[index]->status, "Ready");
                     processes[index]->changed = 1;
                 }
-                else if (strcmp(processes[index]->status, "Blocked/Suspend"))
+                else if (strcmp(processes[index]->status, "Blocked/Suspend") == 0)
                 {
                     strcpy(processes[index]->status, "Blocked");
                     processes[index]->changed = 1;
@@ -273,26 +273,38 @@ int main(int args, char* kwargs[])
 			else if (strcmp(tokenizedLine[1], "interrupt") == 0)				//An interrupt has occured
 			{
 				//fprintf(fp2, "%s %s ", tokenizedLine[4], tokenizedLine[1]);
+                
                 index = findProcessLocation(processes, tokenizedLine[4]); // find process in array
-                if(strcmp(processes[index]->status, "Blocked"))
+                // Check if the object is in a queue
+                if( strcmp(processes[index]->name, disk->array[0] == 0) ||
+                    strcmp(processes[index]->name, keyboard->array[0] == 0) ||
+                    strcmp(processes[index]->name, printer->array[0] == 0))
                 {
-                    strcpy(processes[index]->status, "Ready");
-                    processes[index]->changed = 1;
+                    if(strcmp(processes[index]->status, "Blocked") == 0)
+                    {
+                        strcpy(processes[index]->status, "Ready");
+                        processes[index]->changed = 1;
+                    }
+                    else if(strcmp(processes[index]->status, "Blocked/Suspend") == 0)
+                    {
+                        strcpy(processes[index]->status, "Ready/Suspend");
+                        processes[index]->changed = 1;
+                    }
+                    else{
+                        printf("Cannot interrupt %s, not in the right starting state.\n", tokenizedLine[4]);
+                    }
                 }
-                else if(strcmp(processes[index]->status, "Blocked/Suspend"))
+                else
                 {
-                    strcpy(processes[index]->status, "Ready/Suspend");
-                    processes[index]->changed = 1;
+                    printf("Cannot interrupt %s, not at the front of a queue.");
                 }
-                else{
-                    printf("Cannot interrupt %s, not in the right starting state.\n", tokenizedLine[4]);
-                }
+                
 			}
 			else																//Process has been terminated
 			{
 				//fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[2]);
                 index = findProcessLocation(processes, tokenizedLine[0]); // find process in array
-                if(strcmp(processes[index]->status, "Running"))
+                if(strcmp(processes[index]->status, "Running") == 0)
                 {
                     strcpy(processes[index]->status, "Release");
                     processes[index]->changed = 1;
