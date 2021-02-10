@@ -176,6 +176,21 @@ int main(int args, char* kwargs[])
 			    {
 			        strcpy(processes[index] -> status, "Blocked"); //Set to blocked state
 			        processes[index] -> changed = 1;
+
+              if (strcmp(tokenizedLine[3], "disk") == 0)
+              {
+                addToQueue(disk, processes[index]);
+              }
+
+              else if (strcmp(tokenizedLine[3], "keyboard") == 0)
+              {
+                addToQueue(keyboard, processes[index]);
+              }
+
+              else if (strcmp(tokenizedLine[3], "printer") == 0)
+              {
+                addToQueue(printer, processes[index]);
+              }
 			    }
 
 		      else
