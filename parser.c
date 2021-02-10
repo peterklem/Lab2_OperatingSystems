@@ -470,7 +470,6 @@ int findProcessLocation(struct Process* processes[20], char* processName)
     // If it gets here it did not find a match
     return -1;
 }
-<<<<<<< HEAD
 
 void resetChanged(struct Process* processes[20], int numProcesses)
 // Set all "changed" variables back to 0
@@ -480,5 +479,3 @@ void resetChanged(struct Process* processes[20], int numProcesses)
         processes[i]->changed = 0;
     }
 }
-=======
->>>>>>> f0e3790ad360737a52f2f84de4342988cee22020
