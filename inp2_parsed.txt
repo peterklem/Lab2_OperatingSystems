@@ -41,7 +41,8 @@ Disk queue:
 Keyboard queue: 
 Printer queue: P1 
 
-At time 36: P11 is swapped in; P5 is terminated; P6 is dispatched.P1 Blocked P2 Release P5 Ready P6 Ready P7 New P9 Ready P11 Ready* P12 Ready P15 Blocked P20 Ready/Suspend 
+At time 36: P11 is swapped in; P5 is terminated; P6 is dispatched.
+P1 Blocked P2 Release P5 Release* P6 Running* P7 New P9 Ready P11 Ready* P12 Ready P15 Blocked P20 Ready/Suspend 
 Disk queue: 
 Keyboard queue: 
 Printer queue: P1 
