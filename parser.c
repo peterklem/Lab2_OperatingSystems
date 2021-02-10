@@ -3,7 +3,8 @@
 #include<string.h>
 #include<stdlib.h>
 
-#define QUEUE_SIZE 20
+#define QUEUE_CAPACITY 20
+#define MAX_NAME_LENGTH 5
 
 // Struct of process variables
 struct Process{
@@ -33,7 +34,7 @@ int findProcessLocation(struct Process* processes[20], char* processName);
 
 int main(int args, char* kwargs[])
 {
-	int i;
+	//int i;
 	char* rch;
 	char str[200];
 	char LineInFile[40][300]; // 40 words, 300 letters each
@@ -51,7 +52,7 @@ int main(int args, char* kwargs[])
 											//You can store in variables instead of printing to file
 
 	lineP = 0;
-	i = 0;
+	//i = 0;
 
     // Instantiate queues
     struct Queue* keyboard;
@@ -104,30 +105,42 @@ int main(int args, char* kwargs[])
             // Add to pointer array
             processes[numProcesses] = newEntry; 
             numProcesses++; //Increment total processes
+            
         }
         
-        
+           
     }
+     
     fprintf(fp2, "\n"); // Newline in file, first line complete
     
 // Test code 
+// This is working as of 2/10/21
 //=====================================================================================
     // Find location in processes array of P8
     int loc = 0;
+    
     loc = findProcessLocation(processes, "P8");
-    printf("P8 is supposed to be in index [4], is actually in index [%i]", loc);
+    printf("P8 is supposed to be in index [4], is actually in index [%i]\n", loc);
     // Add the first two items to the disk queue
     for (int i = 0; i < 2; i++)
     {
         addToQueue(disk, processes[i]);
     }
     printQueue(disk);
-
+    // Find P1 and remove from disk
+    int index;
+    index = findProcessLocation(processes, "P1");
+    printf("Index of P1 is %i.\n", index);
+    removeFromQueue(disk, processes[0]);
+    printQueue(disk);
+    removeFromQueue(disk,processes[2]);
+    removeFromQueue(disk, processes[1]);
+    printQueue(disk);
 //=====================================================================================
 
 	//parse each remaining line into Process event
 	//while loop with fgets reads each line
-	while (fgets(str, sizeof(str), fp1) != NULL) // Line 1
+	while (fgets(str, sizeof(str), fp1) != NULL) // Line 2
 	{
 		lineP = 0;
 		rch = strtok(str, ":;.");					// use strtok to break up the line by : or . or ; This would separate each line into the different events
@@ -139,7 +152,7 @@ int main(int args, char* kwargs[])
 		} 
 
 		//for each event (e.g. Time slice for P7 expires) pull out process number and event
-		for (i = 1; i < lineP - 1; i++)
+		for (int i = 1; i < lineP - 1; i++)
 		{
 			lineQ = 0;
 			sch = strtok(LineInFile[i], " ");
@@ -153,8 +166,8 @@ int main(int args, char* kwargs[])
 			//tokenizedLine has the event separated by spaces (e.g. Time slice for P7 expires)
 			if (strcmp(tokenizedLine[1], "requests") == 0)						//Process requests an I/O device
 			{
-				fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[1]);
-				//fprintf(fp2, "%s %s %s ", tokenizedLine[0], tokenizedLine[1], tokenizedLine[3]);
+				//fprintf(fp2, "%s %s ", tokenizedLine[0], tokenizedLine[1]);
+				fprintf(fp2, "%s %s %s ", tokenizedLine[0], tokenizedLine[1], tokenizedLine[3]);
 			}
 			else if ((strcmp(tokenizedLine[2], "dispatched") == 0))				//Process is dispatched
 			{
@@ -212,16 +225,43 @@ struct Queue* createQueue(const char queueName[10])
     queue->rear = 0;
     queue->size = 0;
     //Initialize array
-    queue->array = (char**)malloc(QUEUE_SIZE * sizeof(char[4]));
+    queue->array = malloc(QUEUE_CAPACITY * sizeof(char*));
+    for (int i = 0; i < QUEUE_CAPACITY; i++)
+    // Initialize each pointer
+    {
+        queue->array[i] = malloc(MAX_NAME_LENGTH * sizeof(char));
+    }
     return queue;
+}
+
+int isEmpty(struct Queue* queue)
+{
+    return (queue->size == 0); 
+}
+
+int isFull(struct Queue* queue)
+{
+    return(queue->size == QUEUE_CAPACITY);
 }
 
 void addToQueue(struct Queue* queue, struct Process* process)
 // Adds a process to the end of a queue
 {
+
+    if(isFull(queue)) // Check capacity
+    {
+        printf("Unable to add to %s to %s queue because it is full.",
+                process->name,
+                queue->name);
+        return;
+    }
+
+    if (!isEmpty(queue)) // Only move end pointer if array is already initialized 
+    {
+        queue->rear = (queue->rear+1) // Move rear pointer to new entry
+                    % QUEUE_CAPACITY; // Loop around if needed
+    }
     
-    queue->rear = (queue->rear+1) // Move rear pointer to new entry
-                    % QUEUE_SIZE; // Loop around if needed
     strcpy(queue->array[queue->rear], process->name);// Add process name to queue array
     //queue->array[queue->rear] = process->name; 
     queue->size += 1; //increase size
@@ -230,34 +270,55 @@ void addToQueue(struct Queue* queue, struct Process* process)
 void removeFromQueue(struct Queue* queue, struct Process* process)
 // Removes a processs from the beginning of the queue
 {
-    // Make sure the process being removed is first in the queue
+    // Check capacity
+    if(isEmpty(queue))
+    {
+        printf("Process %s cannot be removed becasue the %s queue is empty.",
+                process->name,
+                queue->name);
+        return;
+    }
+    // Notify user if this was not next in queue
     if(strcmp(queue->array[queue->front], process->name))
     {
-        printf("The process %s is not at the beginning of the %s queue\n",
+        printf("The process %s is not at the beginning of the %s queue.\n",
                 process->name,
-                queue->array[queue->front]);
+                queue->name);
+        return;
     }
     queue->front = (queue->front+1) // Move front pointer to new entry
-                    % QUEUE_SIZE; // Loop around if needed
+                    % QUEUE_CAPACITY; // Loop around if needed
     queue->size -= 1; // Decrease size
 }
 
 void printQueue(struct Queue* queue)
 // Prints the queue out to the terminal
 {
-    for (int i = 0; i < queue->size; i++)
-        {
-            printf("%s ", queue->array[i]);
-        }
+    printf("%s queue: ", queue->name);
+    int i = queue->front; //Iter
+    while(i != queue->rear + 1)
+    {
+        printf("%s ", queue->array[i]);   
+        i++;
+        if (i == QUEUE_CAPACITY) // Loop around queue if max value is reached
+            i = 0; 
+    }
+    printf("\n");
 }
 
 void writeQueue(struct Queue* queue, FILE* outFile)
 // Writes the queue to the output file
 {
-    for (int i = 0; i < queue->size; i++)
+    fprintf(outFile, "%s queue: ", queue->name);
+    int i = queue->front; //Iter
+    while(i != queue->rear + 1)
     {
-        fprintf(outFile, "%s ", queue->array[i]);
+        fprintf(outFile, "%s ", queue->array[i]);   
+        i++;
+        if (i == QUEUE_CAPACITY) // Loop around queue if max value is reached
+            i = 0; 
     }
+    fprintf(outFile, "\n");
 }
 
 void printProcessStatus(struct Process* processes[20], int numProcesses)
@@ -265,9 +326,12 @@ void printProcessStatus(struct Process* processes[20], int numProcesses)
 {
     for (int i = 0; i < numProcesses; i++)
     {
-        printf("%s %s ", 
+        printf("%s %s", 
                 processes[i]->name,
                 processes[i]->status);
+        if(processes[i]->changed)
+            printf("*"); // Changed states recently
+        printf(" "); // Add space at end
     }
 }
 
@@ -279,14 +343,18 @@ void writeProcessStatus(struct Process* processes[20], int numProcesses, FILE* o
         fprintf(outFile, "%s %s ", 
                 processes[i]->name,
                 processes[i]->status);
+        if(processes[i]->changed)
+            fprintf(outFile, "*"); // Changed states recently
+        fprintf(outFile, " "); // Add space at end
     }
 }
 
 int findProcessLocation(struct Process* processes[20], char* processName)
 // Gets the array location of the process
-{
+{    
     for (int i = 0; i < 20; i++)
     {
+        
         if (strcmp(processes[i]->name, processName) == 0)
             return i; // Process success, return index
         
