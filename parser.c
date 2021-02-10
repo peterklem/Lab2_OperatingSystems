@@ -57,9 +57,9 @@ int main(int args, char* kwargs[])
     struct Queue* keyboard;
     struct Queue* disk;
     struct Queue* printer;
-    printer = createQueue();
-    keyboard = createQueue();
-    disk = createQueue();
+    printer = createQueue((char*)"Printer");
+    keyboard = createQueue((char*)"Keyboard");
+    disk = createQueue((char*)"Disk");
 
 	printf("Started parsing...\n");
 
