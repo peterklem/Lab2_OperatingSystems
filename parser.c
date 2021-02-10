@@ -5,10 +5,12 @@
 
 #define QUEUE_CAPACITY 20
 #define MAX_NAME_LENGTH 5
+#define INPUT_FILE "inp2.txt" 
+#define OUTPUT_FILE "inp2_parsed.txt"
 
 // Struct of process variables
 struct Process{
-    char name[3]; // Number of process
+    char name[4]; // Number of process
     char status[20]; // ready, blocked, or running
     int changed; // 1 if just changed, 0 if same
     char task[15];
@@ -48,8 +50,8 @@ int main(int args, char* kwargs[])
 
 	FILE* fp1;
 	FILE* fp2;
-	fp1 = fopen("inp1.txt", "r");			//open the original input file
-	fp2 = fopen("inp1_parsed.txt", "w");	//output the Process ID and event to another file.
+	fp1 = fopen(INPUT_FILE, "r");			//open the original input file
+	fp2 = fopen(OUTPUT_FILE, "w");	//output the Process ID and event to another file.
 											//You can store in variables instead of printing to file
 
 	lineP = 0;
@@ -169,28 +171,30 @@ int main(int args, char* kwargs[])
 				sch = strtok(NULL, " ");
             }
 			//tokenizedLine has the event separated by spaces (e.g. Time slice for P7 expires)
-      if (strcmp(tokenizedLine[1], "requests") == 0)						//Process requests an I/O device
+            if (strcmp(tokenizedLine[1],"requests") == 0)						//Process requests an I/O device
 			{
 			    int index = findProcessLocation(processes, tokenizedLine[0]);
 			    if (strcmp(processes[index] -> status, "Running") == 0)
 			    {
 			        strcpy(processes[index] -> status, "Blocked"); //Set to blocked state
-			        processes[index] -> changed = 1;
+			        processes[index] -> changed = 1; // Indicate changed state
+                    strcpy(processes[index]->task, tokenizedLine[3]);
 
-              if (strcmp(tokenizedLine[3], "disk") == 0)
-              {
-                addToQueue(disk, processes[index]);
-              }
+                    if (strcmp(tokenizedLine[3], "disk") == 0)
+                    {
+                        addToQueue(disk, processes[index]);
+                    }
 
-              else if (strcmp(tokenizedLine[3], "keyboard") == 0)
-              {
-                addToQueue(keyboard, processes[index]);
-              }
+                    else if (strcmp(tokenizedLine[3], "keyboard") == 0)
+                    {
+                        addToQueue(keyboard, processes[index]);
+                    }
 
-              else if (strcmp(tokenizedLine[3], "printer") == 0)
-              {
-                addToQueue(printer, processes[index]);
-              }
+                    else if (strcmp(tokenizedLine[3], "printer") == 0)
+                    {
+                        addToQueue(printer, processes[index]);
+                    }
+                    
 			    }
 
 		      else
@@ -275,15 +279,14 @@ int main(int args, char* kwargs[])
 				//fprintf(fp2, "%s %s ", tokenizedLine[4], tokenizedLine[1]);
                 index = findProcessLocation(processes, tokenizedLine[4]); // find process in array
                 // Determine which queue the item is in, remove from queue
-                if( strcmp(processes[index]->name, disk->array[0]) == 0) // Disk array
+                if (strcmp(processes[index]->task, "disk") == 0)
                     removeFromQueue(disk, processes[index]);
-                else if(strcmp(processes[index]->name, keyboard->array[0]) == 0)
+                else if (strcmp(processes[index]->task, "keyboard") == 0)
                     removeFromQueue(keyboard, processes[index]);
-                else if (strcmp(processes[index]->name, printer->array[0]) == 0)
+                else if (strcmp(processes[index]->task, "printer") == 0)
                     removeFromQueue(printer, processes[index]);
                 else
-                    printf("Cannot interrupt %s, not at the front of a queue.");
-                
+                    printf("%s is not in any queue.", processes[index]->name);
 
                 if(strcmp(processes[index]->status, "Blocked") == 0)
                 {
@@ -312,7 +315,7 @@ int main(int args, char* kwargs[])
                     processes[index]->changed = 1;
                 }
                 else{
-                    printf("Cannot interrupt %s, not in the right starting state.\n", tokenizedLine[0]);
+                    printf("\nCannot interrupt %s, not in the right starting state.\n", tokenizedLine[0]);
                 }
 			}
 
@@ -366,6 +369,7 @@ struct Queue* createQueue(const char queueName[10])
     {
         queue->array[i] = malloc(MAX_NAME_LENGTH * sizeof(char));
     }
+    strcpy(queue->array[0], "\0");
     return queue;
 }
 
@@ -413,16 +417,27 @@ void removeFromQueue(struct Queue* queue, struct Process* process)
                 queue->name);
         return;
     }
-    // Notify user if this was not next in queue
-    if(strcmp(queue->array[queue->front], process->name))
+    else if (queue->size == 1) // First and last entry
     {
-        printf("The process %s is not at the beginning of the %s queue.\n",
+        queue->front = 0;
+        queue->rear = 0;
+    }
+    if(strcmp(queue->array[queue->front], process->name) == 0) // First entry of multiple
+    {
+        queue->front = (queue->front+1) // Move front pointer to new entry
+                    % QUEUE_CAPACITY; // Loop around if needed
+    }
+    else if (strcmp(queue->array[queue->rear], process->name) == 0) // Last entry of multiple
+    {
+        queue->rear = (queue->rear-1)
+                        % QUEUE_CAPACITY;
+    }
+    else // Not in queue
+    {
+        printf("Process %s is not in the %s queue.\n",
                 process->name,
                 queue->name);
-        return;
     }
-    queue->front = (queue->front+1) // Move front pointer to new entry
-                    % QUEUE_CAPACITY; // Loop around if needed
     queue->size -= 1; // Decrease size
 }
 
@@ -482,7 +497,7 @@ void writeProcessStatus(struct Process* processes[20], int numProcesses, FILE* o
 {
     for (int i = 0; i < numProcesses; i++)
     {
-        fprintf(outFile, "%s %s ",
+        fprintf(outFile, "%s %s",
                 processes[i]->name,
                 processes[i]->status);
         if(processes[i]->changed)
