@@ -241,7 +241,7 @@ int main(int args, char* kwargs[])
 
                 }
                 else if(strcmp(processes[index]->status, "Ready") == 0
-                    || strcmp(processes[index]->status, "Running" == 0))
+                    || strcmp(processes[index]->status, "Running") == 0)
                 {
                     strcpy(processes[index]->status, "Ready/Suspend");
                     processes[index]->changed = 1;
@@ -277,8 +277,8 @@ int main(int args, char* kwargs[])
                 index = findProcessLocation(processes, tokenizedLine[4]); // find process in array
                 // Check if the object is in a queue
                 if( strcmp(processes[index]->name, disk->array[0] == 0) ||
-                    strcmp(processes[index]->name, keyboard->array[0] == 0) ||
-                    strcmp(processes[index]->name, printer->array[0] == 0))
+                    strcmp(processes[index]->name, keyboard->array[0]) == 0||
+                    strcmp(processes[index]->name, printer->array[0]) == 0)
                 {
                     if(strcmp(processes[index]->status, "Blocked") == 0)
                     {
