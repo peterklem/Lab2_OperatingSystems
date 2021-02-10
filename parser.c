@@ -71,7 +71,6 @@ int main(int args, char* kwargs[])
      * Parse first line for processes 
      */   
 	header = strtok(str, " ");
-    printf("Header length: %i\n", strlen(header));
     while(memcmp(header, "end", 3) != 0){
         
         if(header[0] != 'P') // Check for process
@@ -117,6 +116,7 @@ int main(int args, char* kwargs[])
 // This is working as of 2/10/21
 //=====================================================================================
     // Find location in processes array of P8
+    /*
     int loc = 0;
     
     loc = findProcessLocation(processes, "P8");
@@ -136,12 +136,16 @@ int main(int args, char* kwargs[])
     removeFromQueue(disk,processes[2]);
     removeFromQueue(disk, processes[1]);
     printQueue(disk);
+    */
 //=====================================================================================
 
 	//parse each remaining line into Process event
 	//while loop with fgets reads each line
 	while (fgets(str, sizeof(str), fp1) != NULL) // Line 2
 	{
+        fprintf(fp2, str); // Print entire line to file & console
+        printf(str);
+
 		lineP = 0;
 		rch = strtok(str, ":;.");					// use strtok to break up the line by : or . or ; This would separate each line into the different events
 		while (rch != NULL)
