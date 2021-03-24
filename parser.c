@@ -51,6 +51,7 @@ int main(int args, char* kwargs[])
     int blocked = 0; // Holds number of blocked processes
     int ready = 0; // Holds number of ready processes
     int threshold = 80; // Number of processes that must be blocked to swap something out, set by user
+    int swaps = 1; // Controls number of swapped processes when threshold is reached
 
 	FILE* fp1;
 	FILE* fp2;
@@ -70,32 +71,48 @@ int main(int args, char* kwargs[])
     disk = createQueue((char*)"Disk");
 
     // Get threshold from user
-    int flag = 0;
-    char thresholdInput = 0;
+    int flag = 1;
+    char thresholdInput;
     while(flag)
     {
         flag = 0;
-        printf("Enter the threshold for blocked process swapping: [a]: 80, [b]: 90, [c]: 100. ")
-        scanf("%s\n", thresholdInput);
-        if(strcmp(thresholdInput, "a") == 0)
+        printf("Enter the threshold for blocked process swapping: [a]: 80, [b]: 90, [c]: 100. ");
+        scanf(" %c", &thresholdInput);
+        if(thresholdInput == 'a')
         {
             threshold = 80;
         }
-        else if(strcmp(thresholdInput, "b") == 0)
+        else if(thresholdInput == 'b')
         {
             threshold = 90;
         }
-        else if (strcmp(thresholdInput, "c") == 0)
+        else if (thresholdInput == 'c')
         {
             threshold = 100;
         }
         else
         {
-            printf("Invalid entry, please try again.");
+            printf("Invalid entry, please try again.\n");
             flag = 1;
         }
     }
-    printf("Threshold: %d\n", threshold);
+    
+    // User enters number of processes swapped when threshold is reached
+    flag = 1;
+    int numSwapInput = 0;
+    while(flag)
+    {
+        flag = 0;
+        printf("Enter the amount of processes swapped if threshold is reached (1 or 2): ");
+        scanf("%d", &numSwapInput);
+        if(numSwapInput < 1 || numSwapInput > 2)
+        {
+            printf("Invalid entry, please try again.\n");
+            flag = 1;
+        }
+    }
+    swaps = numSwapInput;
+    printf("Processes to swap when threshold reached: %d\n", swaps);
 
 	printf("Started parsing...\n");
 
