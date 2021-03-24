@@ -572,10 +572,13 @@ void resetChanged(struct Process* processes[20], int numProcesses)
     }
 }
 
-int checkThreshold(int ready, int blocked, int threshold)
+int checkThreshold(int numProcesses, int blocked, int threshold, int swaps)
 // Return 0, 1, or 2 processes to swap
 {
     int retval = 0;
-    //if((double)blocked / (double)ready 
-    
+    if((((double)blocked / (double)numProcesses )) >= ((double)threshold/100))
+    {
+        retval = swaps;
+    }
+    return retval;
 }
