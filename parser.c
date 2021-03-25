@@ -5,8 +5,10 @@
 
 #define QUEUE_CAPACITY 20
 #define MAX_NAME_LENGTH 5
-#define INPUT_FILE "inp2.txt" 
-#define OUTPUT_FILE "inp2_parsed.txt"
+#define INPUT_FILE "inp3.txt"
+#define OUTPUT_FILE "inp3_parsed.txt"
+#define PROCESSLATENCY 50
+#define SWAP_PENALTY 30
 
 // Struct of process variables
 struct Process{
@@ -38,20 +40,23 @@ int main(int args, char* kwargs[])
 {
 	//int i;
 	char* rch;
-	char str[200];
+	char str[250];
 	char LineInFile[40][300]; // 40 words, 300 letters each
 	int lineP, lineQ;
 	char* sch;
 	char tokenizedLine[10][10];
-    char *header; // Array of strings from first line of each input file
-    int numProcesses = 0; // Number of processes initialized
-    struct Process *processes[20]; // Holds each process as they are initialized
-    int index = 0;
+  char *header; // Array of strings from first line of each input file
+  int numProcesses = 0; // Number of processes initialized
+  int activeProcesses = 0; //Number of active processes initialized
+  struct Process *processes[20]; // Holds each process as they are initialized
+  int index = 0;
+  int overallLatency = 0;
 
-    int blocked = 0; // Holds number of blocked processes
-    int ready = 0; // Holds number of ready processes
-    int threshold = 80; // Number of processes that must be blocked to swap something out, set by user
-    int swaps = 1; // Controls number of swapped processes when threshold is reached
+
+  int blocked = 0; // Holds number of blocked processes
+  int ready = 0; // Holds number of ready processes
+  int threshold = 80; // Number of processes that must be blocked to swap something out, set by user
+  int swaps = 1; // Controls number of swapped processes when threshold is reached
 
 	FILE* fp1;
 	FILE* fp2;
@@ -96,7 +101,7 @@ int main(int args, char* kwargs[])
             flag = 1;
         }
     }
-    
+
     // User enters number of processes swapped when threshold is reached
     flag = 1;
     int numSwapInput = 0;
@@ -112,6 +117,7 @@ int main(int args, char* kwargs[])
         }
     }
     swaps = numSwapInput;
+    overallLatency = overallLatency + (swaps * PROCESSLATENCY);
     printf("Processes to swap when threshold reached: %d\n", swaps);
 
 	printf("Started parsing...\n");
@@ -156,6 +162,10 @@ int main(int args, char* kwargs[])
             // Add to pointer array
             processes[numProcesses] = newEntry;
             numProcesses++; //Increment total processes
+            activeProcesses++; //Increment active processes
+            if (strcmp(newEntry->status, "Blocked") == 0){
+              blocked++;
+            }
 
         }
 
@@ -226,24 +236,27 @@ int main(int args, char* kwargs[])
 			    if (strcmp(processes[index] -> status, "Running") == 0)
 			    {
 			        strcpy(processes[index] -> status, "Blocked"); //Set to blocked state
+              blocked++;
 			        processes[index] -> changed = 1; // Indicate changed state
-                    strcpy(processes[index]->task, tokenizedLine[3]);
+              strcpy(processes[index]->task, tokenizedLine[3]);
 
-                    if (strcmp(tokenizedLine[3], "disk") == 0)
-                    {
-                        addToQueue(disk, processes[index]);
-                    }
+              if (strcmp(tokenizedLine[3], "disk") == 0)
+              {
+                  addToQueue(disk, processes[index]);
+              }
 
-                    else if (strcmp(tokenizedLine[3], "keyboard") == 0)
-                    {
-                        addToQueue(keyboard, processes[index]);
-                    }
+              else if (strcmp(tokenizedLine[3], "keyboard") == 0)
+              {
+                  addToQueue(keyboard, processes[index]);
+              }
 
-                    else if (strcmp(tokenizedLine[3], "printer") == 0)
-                    {
-                        addToQueue(printer, processes[index]);
-                    }
-                    
+              else if (strcmp(tokenizedLine[3], "printer") == 0)
+              {
+                  addToQueue(printer, processes[index]);
+              }
+
+
+
 			    }
 
 		      else
@@ -341,6 +354,7 @@ int main(int args, char* kwargs[])
                 {
                     strcpy(processes[index]->status, "Ready");
                     processes[index]->changed = 1;
+                    blocked--;
                 }
                 else if(strcmp(processes[index]->status, "Blocked/Suspend") == 0)
                 {
@@ -350,18 +364,145 @@ int main(int args, char* kwargs[])
                 else{
                     printf("Cannot interrupt %s, not in the right starting state.\n", tokenizedLine[4]);
                 }
-                
-                
-                
+
+
+
 			}
 			else																//Process has been terminated
 			{
                 index = findProcessLocation(processes, tokenizedLine[0]); // find process in array
                 strcpy(processes[index]->status, "Release");
                 processes[index]->changed = 1;
+                activeProcesses--;
+
+                //Swapping in when a process is terminated
+                int swapinFlag = 0;
+                if (swaps == 1){
+                  while (swapinFlag == 0){
+                    if (blocked == activeProcesses){
+                      swapinFlag = 1;
+                    }
+                    int i = rand() % 20;
+                    if(strcmp(processes[i]->status, "Blocked/Suspend") == 0){
+                      swapinFlag = 1;
+                      strcpy(processes[i]->status, "Blocked");
+                      processes[i]->changed = 1;
+                      activeProcesses++;
+                      blocked++;
+                      overallLatency = overallLatency + SWAP_PENALTY;
+                    }
+                    else if(strcmp(processes[i]->status, "Ready/Suspend") == 0){
+                      swapinFlag = 1;
+                      strcpy(processes[i]->status, "Ready");
+                      processes[i]->changed = 1;
+                      activeProcesses++;
+                      overallLatency = overallLatency + SWAP_PENALTY;
+                    }
+                  }
+                }
+
+                else if (swaps == 2){
+                  while(swapinFlag == 0){
+                    int i = rand() % 20;
+                    int j = rand() % 20;
+                    if(strcmp(processes[i]->status, "Blocked/Suspend") == 0){
+                      if (strcmp(processes[j]->status, "Ready/Suspend") == 0){
+                        swapinFlag = 1;
+                        strcpy(processes[i]->status, "Blocked");
+                        processes[i]->changed = 1;
+                        blocked++;
+                        strcpy(processes[i]->status, "Ready");
+                        processes[i]->changed = 1;
+                        activeProcesses += 2;
+                        overallLatency = overallLatency + (2*SWAP_PENALTY);
+                      }
+
+                      else if (strcmp(processes[j]->status, "Blocked/Suspend") == 0){
+                        swapinFlag = 1;
+                        strcpy(processes[i]->status, "Blocked");
+                        processes[i]->changed = 1;
+                        blocked++;
+                        strcpy(processes[i]->status, "Blocked");
+                        processes[i]->changed = 1;
+                        activeProcesses += 2;
+                        overallLatency = overallLatency + (2*SWAP_PENALTY);
+                      }
+
+                    }
+
+                    else if(strcmp(processes[i]->status, "Ready/Suspend") == 0){
+                      if (strcmp(processes[j]->status, "Ready/Suspend") == 0){
+                        swapinFlag = 1;
+                        strcpy(processes[i]->status, "Ready");
+                        processes[i]->changed = 1;
+                        strcpy(processes[i]->status, "Ready");
+                        processes[i]->changed = 1;
+                        activeProcesses += 2;
+                        overallLatency = overallLatency + (2*SWAP_PENALTY);
+                      }
+
+                      else if (strcmp(processes[j]->status, "Blocked/Suspend") == 0){
+                        swapinFlag = 1;
+                        strcpy(processes[i]->status, "Ready");
+                        processes[i]->changed = 1;
+                        strcpy(processes[i]->status, "Blocked");
+                        processes[i]->changed = 1;
+                        blocked++;
+                        activeProcesses += 2;
+                        overallLatency = overallLatency + SWAP_PENALTY;
+                      }
+                    }
+
+                  }
+                }
+
 			}
 
 		}
+
+    //check threshold and if need to swap out then do it
+    int blockedflag = 0;
+    int retval = checkThreshold(activeProcesses, blocked, threshold, swaps);
+    if (retval == 1){
+
+      while(blockedflag == 0){
+        int i = rand() % 20;
+        if(strcmp(processes[i]->status, "Blocked") == 0){
+          blockedflag = 1;
+        }
+        if(blockedflag == 1){
+          strcpy(processes[i]->status, "Blocked/Suspend");
+          processes[i]->changed = 1;
+          activeProcesses--;
+          blocked--;
+          overallLatency = overallLatency + SWAP_PENALTY;
+        }
+      }
+    }
+
+    else if (retval == 2){
+
+      while(blockedflag == 0){
+        int i = rand() % 20;
+        int j = rand() % 20;
+        if(strcmp(processes[i]->status, "Blocked") == 0){
+          if (strcmp(processes[j]->status, "Blocked") == 0){
+              blockedflag = 1;
+          }
+
+        }
+        if(blockedflag == 1){
+          strcpy(processes[i]->status, "Blocked/Suspend");
+          processes[i]->changed = 1;
+          strcpy(processes[j]->status, "Blocked/Suspend");
+          processes[j]->changed = 1;
+          activeProcesses -= 2;
+          blocked--;
+          blocked--;
+          overallLatency = overallLatency + (2*SWAP_PENALTY);
+        }
+      }
+    }
         // Output all processes and corresponding status to terminal and output file
         printProcessStatus(processes, numProcesses);
         writeProcessStatus(processes, numProcesses, fp2);
@@ -376,6 +517,7 @@ int main(int args, char* kwargs[])
         resetChanged(processes, numProcesses); // Reset all changed values for next loop
 		fprintf(fp2, "\n");
         printf("\n");
+        printf("Overall Latency: %d ms\n", overallLatency);
 	}
     /*for (int i = 0; i < sizeof(LineInFile); i++)
     {
@@ -487,7 +629,7 @@ void printQueue(struct Queue* queue)
 // Prints the queue out to the terminal
 {
     printf("%s queue: ", queue->name);
-    
+
     int i = queue->front; //Iter
     while(i != queue->rear + 1)
     {
@@ -572,11 +714,11 @@ void resetChanged(struct Process* processes[20], int numProcesses)
     }
 }
 
-int checkThreshold(int numProcesses, int blocked, int threshold, int swaps)
+int checkThreshold(int activeProcesses, int blocked, int threshold, int swaps)
 // Return 0, 1, or 2 processes to swap
 {
     int retval = 0;
-    if((((double)blocked / (double)numProcesses )) >= ((double)threshold/100))
+    if((((double)blocked / (double)activeProcesses )) >= ((double)threshold/100))
     {
         retval = swaps;
     }
