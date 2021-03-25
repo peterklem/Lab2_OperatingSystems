@@ -1,0 +1,12 @@
+P1 Ready P2 Running P3 Blocked P4 Blocked P5 Ready P6 Blocked P7 Blocked P8 Ready P9 Ready P10 Blocked P11 Ready P12 Blocked P13 Ready P14 Ready P15 Blocked P16 Ready P17 Ready P18 Blocked P19 Blocked P20 Blocked end
+At time 5: P2 requests the disk; P5 is dispatched.
+At time 15: P5 requests the keyboard; P1 is dispatched.
+At time 18: P1 requests the printer; P9 is dispatched.
+At time 20: P9 requests the keyboard; P11 is dispatched.
+At time 24: P11 requests the printer; P8 is dispatched.
+At time 28: P8 requests the disk; P16 is dispatched.
+At time 32: P16 requests the printer; P17 is dispatched.
+At time 36: P17 requests the disk; P13 is dispatched.
+At time 40: P13 is terminated; An interrupt occurred for P10.
+At time 45: P10 is dispatched;
+At time 49: P10 requests the keyboard; P14 is terminated.
